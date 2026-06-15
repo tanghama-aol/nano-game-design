@@ -1,0 +1,13 @@
+{
+  "name": "@nano-game/types",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@nano-game/config-typescript": "workspace:*",
+    "typescript": "^5.0.0"
+  }
+}

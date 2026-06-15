@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Settings {
+  id                String   @id @default(cuid())
+  authMode          String   @default("GEMINI")
+  geminiApiKey      String?
+  vertexProjectId   String?
+  vertexClientEmail String?
+  vertexPrivateKey  String?
+  textModel         String   @default("gemini-1.5-pro")
+  imageModel        String   @default("imagen-3.0-generate-001")
+  maxConcurrency    Int      @default(3)
+  globalSeed        Int?     // To hold the selected golden seed
+  updatedAt         DateTime @updatedAt
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String   @default("Untitled Project")
+  treeData    String   
+  isGenerating Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GoldenSeed {
+  id          String   @id @default(cuid())
+  seed        Int      @unique
+  name        String
+  description String?
+  imageUrl    String?  // Reference to the image that produced this good seed
+  createdAt   DateTime @default(now())
+}

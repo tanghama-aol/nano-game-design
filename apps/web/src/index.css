@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    font-family:
+      "Aptos",
+      "Segoe UI",
+      "Helvetica Neue",
+      Arial,
+      sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    background: #070b13;
+    overflow-x: hidden;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  ::selection {
+    background: rgba(34, 211, 238, 0.35);
+  }
+}
+
+@layer components {
+  .panel {
+    border: 1px solid rgba(51, 65, 85, 0.9);
+    border-radius: 0.5rem;
+    background: rgba(15, 23, 42, 0.88);
+    box-shadow: 0 22px 70px rgba(2, 6, 23, 0.28);
+    backdrop-filter: blur(18px);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-bottom: 1px solid rgba(51, 65, 85, 0.75);
+    padding-bottom: 0.75rem;
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #f8fafc;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .field-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: #cbd5e1;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .field-input {
+    width: 100%;
+    border: 1px solid rgba(71, 85, 105, 0.9);
+    border-radius: 0.45rem;
+    background: rgba(2, 6, 23, 0.55);
+    color: #f8fafc;
+    outline: none;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      background 160ms ease;
+  }
+
+  .field-input:focus {
+    border-color: rgba(34, 211, 238, 0.85);
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.14);
+    background: rgba(2, 6, 23, 0.82);
+  }
+
+  .field-input::placeholder {
+    color: #64748b;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .danger-button,
+  .ghost-button {
+    display: inline-flex;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.45rem;
+    padding: 0.62rem 0.9rem;
+    font-size: 0.86rem;
+    font-weight: 800;
+    line-height: 1;
+    transition:
+      transform 140ms ease,
+      border-color 140ms ease,
+      background 140ms ease,
+      color 140ms ease;
+  }
+
+  .primary-button {
+    border: 1px solid rgba(34, 211, 238, 0.65);
+    background: linear-gradient(135deg, #0891b2, #22c55e);
+    color: #031014;
+  }
+
+  .secondary-button {
+    border: 1px solid rgba(148, 163, 184, 0.42);
+    background: rgba(30, 41, 59, 0.86);
+    color: #e2e8f0;
+  }
+
+  .danger-button {
+    border: 1px solid rgba(248, 113, 113, 0.42);
+    background: rgba(127, 29, 29, 0.45);
+    color: #fecaca;
+  }
+
+  .ghost-button {
+    border: 1px solid transparent;
+    background: transparent;
+    color: #94a3b8;
+  }
+
+  .primary-button:hover:not(:disabled),
+  .secondary-button:hover:not(:disabled),
+  .danger-button:hover:not(:disabled),
+  .ghost-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .primary-button:disabled,
+  .secondary-button:disabled,
+  .danger-button:disabled,
+  .ghost-button:disabled {
+    opacity: 0.5;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .thin-scrollbar {
+    scrollbar-color: rgba(100, 116, 139, 0.8) transparent;
+    scrollbar-width: thin;
+  }
+
+  .thin-scrollbar::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(100, 116, 139, 0.8);
+  }
+}
