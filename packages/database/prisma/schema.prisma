@@ -10,12 +10,18 @@ datasource db {
 model Settings {
   id                String   @id @default(cuid())
   authMode          String   @default("GEMINI")
+  textProvider      String   @default("GEMINI")
+  imageProvider     String   @default("GEMINI")
   geminiApiKey      String?
   vertexProjectId   String?
   vertexClientEmail String?
   vertexPrivateKey  String?
   textModel         String   @default("gemini-1.5-pro")
   imageModel        String   @default("imagen-3.0-generate-001")
+  textBaseUrl       String?
+  imageBaseUrl      String?
+  textApiKey        String?
+  imageApiKey       String?
   maxConcurrency    Int      @default(3)
   globalSeed        Int?     // To hold the selected golden seed
   updatedAt         DateTime @updatedAt

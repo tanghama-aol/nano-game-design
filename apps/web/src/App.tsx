@@ -5,16 +5,19 @@ import { PromptPanel } from './components/PromptPanel'
 import { SeedLibrary } from "./components/SeedLibrary";
 import { GenerationPanel } from './components/GenerationPanel'
 import { EditorPanel } from './components/EditorPanel'
+import { ReskinPanel } from './components/ReskinPanel'
 import { useTreeStore } from './store/treeStore'
 import type { IResourceNode, NodeStatus } from '@nano-game/types'
 import type { ReactNode } from 'react'
-import { Boxes, CheckCircle2, CircleDashed, ImageIcon, Loader2, Sparkles, TriangleAlert } from 'lucide-react'
+import { Boxes, CheckCircle2, CircleDashed, ImageIcon, Languages, Loader2, Sparkles, TriangleAlert } from 'lucide-react'
+import { useI18n } from './i18n'
 
 function flattenNodes(nodes: IResourceNode[]): IResourceNode[] {
   return nodes.flatMap((node) => [node, ...(node.children ? flattenNodes(node.children) : [])])
 }
 
 function App() {
+  const { language, setLanguage, t } = useI18n()
   const nodes = useTreeStore((state) => state.nodes)
   const globalStyle = useTreeStore((state) => state.globalStyle)
   const flatNodes = flattenNodes(nodes)
@@ -41,29 +44,29 @@ function App() {
             <div className="min-w-0 max-w-3xl">
               <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">
                 <Sparkles size={15} />
-                Nano Game Asset Generator
+                {t('appKicker')}
               </div>
               <h1 className="text-3xl font-black tracking-normal text-white sm:text-4xl">
-                Game Image Design Workbench
+                {t('appTitle')}
               </h1>
               <p className="mt-2 max-w-2xl break-words text-sm leading-6 text-slate-300">
-                Turn a concept into a managed visual asset tree, production prompts, seeded image batches, and exportable metadata.
+                {t('appSubtitle')}
               </p>
             </div>
 
             <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-5 xl:min-w-[46rem]">
-              <Metric icon={<Boxes size={18} />} label="Assets" value={flatNodes.length} tone="cyan" />
-              <Metric icon={<CircleDashed size={18} />} label="Pending" value={statusCounts.pending} tone="slate" />
-              <Metric icon={<Loader2 size={18} />} label="Running" value={statusCounts.generating} tone="blue" />
-              <Metric icon={<CheckCircle2 size={18} />} label="Ready" value={statusCounts.success} tone="green" />
-              <Metric icon={<TriangleAlert size={18} />} label="Failed" value={statusCounts.failed} tone="red" />
+              <Metric icon={<Boxes size={18} />} label={t('assets')} value={flatNodes.length} tone="cyan" />
+              <Metric icon={<CircleDashed size={18} />} label={t('pending')} value={statusCounts.pending} tone="slate" />
+              <Metric icon={<Loader2 size={18} />} label={t('running')} value={statusCounts.generating} tone="blue" />
+              <Metric icon={<CheckCircle2 size={18} />} label={t('ready')} value={statusCounts.success} tone="green" />
+              <Metric icon={<TriangleAlert size={18} />} label={t('failed')} value={statusCounts.failed} tone="red" />
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 border-t border-slate-800 pt-4 md:grid-cols-[1fr_16rem]">
+          <div className="mt-4 grid gap-3 border-t border-slate-800 pt-4 md:grid-cols-[1fr_16rem_10rem]">
             <div>
               <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
-                <span>Export readiness</span>
+                <span>{t('exportReadiness')}</span>
                 <span>{completionRate}%</span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-slate-800">
@@ -76,9 +79,21 @@ function App() {
             <div className="flex items-center gap-3 rounded-md border border-slate-800 bg-slate-900/70 px-3 py-2">
               <ImageIcon className="text-amber-300" size={20} />
               <div className="min-w-0">
-                <div className="text-xs text-slate-500">Global style</div>
+                <div className="text-xs text-slate-500">{t('globalStyle')}</div>
                 <div className="truncate text-sm font-semibold text-slate-100">{globalStyle}</div>
               </div>
+            </div>
+            <div className="flex items-center gap-2 rounded-md border border-slate-800 bg-slate-900/70 px-3 py-2">
+              <Languages className="text-cyan-300" size={20} />
+              <select
+                className="field-input border-0 bg-transparent p-0 text-sm font-bold"
+                value={language}
+                aria-label={t('language')}
+                onChange={(event) => setLanguage(event.target.value as 'en' | 'zh')}
+              >
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+              </select>
             </div>
           </div>
         </header>
@@ -86,6 +101,7 @@ function App() {
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-12 xl:items-start">
           <div className="flex flex-col gap-5 xl:col-span-3">
             <ConceptInput />
+            <ReskinPanel />
             <PromptPanel />
             <SeedLibrary />
             <SettingsPanel />

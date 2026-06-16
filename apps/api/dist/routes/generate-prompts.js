@@ -3,10 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.generatePromptsRouter = void 0;
 const express_1 = require("express");
 const database_1 = require("@nano-game/database");
-const crypto_1 = require("../utils/crypto");
-const genai_1 = require("@google/genai");
-const vertexai_1 = require("@google-cloud/vertexai");
-const proxy_1 = require("../utils/proxy");
+const ai_provider_1 = require("../services/ai-provider");
 exports.generatePromptsRouter = (0, express_1.Router)();
 const SYSTEM_PROMPT = `You are an expert AI image generation prompt engineer.
 Given a list of game assets (nodes) and an overall visual style, enrich their prompts for image generation.
@@ -30,47 +27,8 @@ exports.generatePromptsRouter.post('/', async (req, res) => {
             res.status(400).json({ error: 'Settings not configured' });
             return;
         }
-        let resultText = '';
         const payloadContext = JSON.stringify({ globalStyle, nodes });
-        if (settings.authMode === 'GEMINI') {
-            if (!settings.geminiApiKey) {
-                res.status(400).json({ error: 'Gemini API Key missing' });
-                return;
-            }
-            const apiKey = (0, crypto_1.decrypt)(settings.geminiApiKey);
-            const ai = new genai_1.GoogleGenAI({ apiKey, fetch: (0, proxy_1.getProxyFetch)() });
-            const response = await ai.models.generateContent({
-                model: settings.textModel || 'gemini-1.5-pro',
-                contents: `${SYSTEM_PROMPT}\n\nAssets to process:\n${payloadContext}`
-            });
-            resultText = response.text || '';
-        }
-        else {
-            if (!settings.vertexProjectId || !settings.vertexClientEmail || !settings.vertexPrivateKey) {
-                res.status(400).json({ error: 'Vertex credentials incomplete' });
-                return;
-            }
-            const privateKey = (0, crypto_1.decrypt)(settings.vertexPrivateKey).replace(/\\n/g, '\n');
-            const vertexAI = new vertexai_1.VertexAI({
-                project: settings.vertexProjectId,
-                location: 'us-central1',
-                googleAuthOptions: {
-                    credentials: {
-                        client_email: settings.vertexClientEmail,
-                        private_key: privateKey,
-                    }
-                }
-            });
-            const generativeModel = vertexAI.getGenerativeModel({
-                model: settings.textModel || 'gemini-1.5-pro'
-            });
-            const response = await generativeModel.generateContent({
-                contents: [
-                    { role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\nAssets to process:\n${payloadContext}` }] }
-                ]
-            });
-            resultText = response.response.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        }
+        let resultText = await (0, ai_provider_1.generateText)(settings, SYSTEM_PROMPT, `Assets to process:\n${payloadContext}`);
         resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
         const promptsMap = JSON.parse(resultText);
         res.json({ prompts: promptsMap });

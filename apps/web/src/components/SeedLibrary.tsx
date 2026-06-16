@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useTreeStore } from '../store/treeStore';
 import type { IResourceNode } from '@nano-game/types';
 import { Dices, Save, Sprout } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 interface IGoldenSeed {
   id: string;
@@ -12,6 +13,7 @@ interface IGoldenSeed {
 }
 
 export function SeedLibrary() {
+  const { t } = useI18n();
   const [seeds, setSeeds] = useState<IGoldenSeed[]>([]);
   const [globalSeed, setGlobalSeed] = useState<number | ''>('');
   const [saving, setSaving] = useState(false);
@@ -29,7 +31,7 @@ export function SeedLibrary() {
         if (res.data.globalSeed) setGlobalSeed(res.data.globalSeed);
       })
       .catch(() => {
-        setMessage('Backend unavailable. Seed can still be staged locally.');
+        setMessage(t('backendUnavailableSeed'));
       });
   }, []);
 
@@ -44,9 +46,9 @@ export function SeedLibrary() {
       await axios.post('http://localhost:3001/api/settings', {
         globalSeed: globalSeed === '' ? null : globalSeed,
       });
-      setMessage(globalSeed === '' ? 'Global seed cleared.' : `Global seed ${globalSeed} saved for new generations.`);
+      setMessage(globalSeed === '' ? t('globalSeedCleared') : `${t('globalSeedSaved')} ${globalSeed}`);
     } catch {
-      setMessage('Failed to save global seed. Check backend status.');
+      setMessage(t('backendUnavailableSeed'));
     } finally {
       setSaving(false);
     }
@@ -54,7 +56,7 @@ export function SeedLibrary() {
 
   const handleApplyToNodes = () => {
     if (globalSeed === '') {
-      setMessage('Set a global seed first.');
+      setMessage(t('setGlobalSeedFirst'));
       return;
     }
 
@@ -66,7 +68,7 @@ export function SeedLibrary() {
     });
 
     batchUpdateNodes(updates);
-    setMessage(`Applied seed ${globalSeed} to ${Object.keys(updates).length} pending or failed nodes.`);
+    setMessage(`${t('seedApplied')} ${Object.keys(updates).length}`);
   };
 
   return (
@@ -74,12 +76,12 @@ export function SeedLibrary() {
       <div className="panel-header mb-4">
         <h2 className="panel-title">
           <Dices size={17} className="text-emerald-300" />
-          Golden Seeds
+          {t('goldenSeeds')}
         </h2>
       </div>
       
       <div className="mb-4">
-        <label className="field-label">Global Base Seed</label>
+        <label className="field-label">{t('globalBaseSeed')}</label>
         <div className="flex gap-2">
           <input 
             type="number" 
@@ -96,12 +98,12 @@ export function SeedLibrary() {
             <Save size={15} />
           </button>
         </div>
-        <p className="mt-1 text-[11px] text-slate-500">Saved seeds are used by generation when a node has no local seed.</p>
+        <p className="mt-1 text-[11px] text-slate-500">{t('seedHelp')}</p>
       </div>
 
       <button className="primary-button mb-4 w-full" onClick={handleApplyToNodes} disabled={nodes.length === 0}>
         <Sprout size={16} />
-        Apply Seed to Pending Nodes
+        {t('applySeedPending')}
       </button>
 
       {message && (
@@ -111,7 +113,7 @@ export function SeedLibrary() {
       )}
 
       <div className="space-y-2">
-        <label className="field-label">Saved Golden Seeds</label>
+        <label className="field-label">{t('savedGoldenSeeds')}</label>
         {seeds.map(s => (
           <div key={s.id} className="flex items-center justify-between gap-3 rounded-md border border-slate-700 bg-slate-900/70 p-2 text-sm">
             <div>
@@ -122,7 +124,7 @@ export function SeedLibrary() {
               className="ghost-button min-h-0 px-2 py-1 text-xs text-cyan-200"
               onClick={() => setGlobalSeed(s.seed)}
             >
-              Use
+              {t('use')}
             </button>
           </div>
         ))}

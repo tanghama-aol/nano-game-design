@@ -10,6 +10,7 @@ import { initQueue } from './services/queue';
 import { settingsRouter } from './routes/settings';
 import { generateTreeRouter } from './routes/generate-tree';
 import { generatePromptsRouter } from './routes/generate-prompts';
+import { reskinGameRouter } from './routes/reskin-game';
 import { projectsRouter } from './routes/projects';
 
 dotenv.config();
@@ -33,6 +34,7 @@ app.use(express.json());
 app.use('/api/settings', settingsRouter);
 app.use('/api/generate-tree', generateTreeRouter);
 app.use('/api/generate-prompts', generatePromptsRouter);
+app.use('/api/reskin-game', reskinGameRouter);
 app.use('/api/projects', projectsRouter);
 
 app.get('/api/health', (_req, res) => {

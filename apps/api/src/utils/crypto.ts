@@ -47,8 +47,8 @@ export function decrypt(text: string): string {
     decrypted += decipher.final('utf8') as any;
     
     return decrypted as string;
-  } catch (err) {
-    console.error('Decryption failed', err);
+  } catch {
+    console.warn('Stored credential could not be decrypted with the current ENCRYPTION_KEY.');
     return '';
   }
 }

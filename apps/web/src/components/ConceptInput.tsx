@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useTreeStore } from '../store/treeStore';
 import { WandSparkles } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 const CONCEPT_STARTERS = [
   'A cozy tactical farming RPG with mushroom villages, modular tools, and seasonal monsters.',
@@ -10,6 +11,7 @@ const CONCEPT_STARTERS = [
 ];
 
 export function ConceptInput() {
+  const { t } = useI18n();
   const [concept, setConcept] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,7 +19,7 @@ export function ConceptInput() {
 
   const handleGenerate = async () => {
     if (!concept.trim()) {
-      setError('Enter a game concept before generating the asset tree.');
+      setError(t('conceptRequired'));
       return;
     }
 
@@ -29,7 +31,7 @@ export function ConceptInput() {
         setNodes(res.data.tree);
       }
     } catch (error: any) {
-      setError(error.response?.data?.error || 'Failed to generate tree. Check API settings and backend status.');
+      setError(error.response?.data?.error || t('generateTreeFailed'));
     } finally {
       setLoading(false);
     }
@@ -40,13 +42,13 @@ export function ConceptInput() {
       <div className="panel-header mb-4">
         <h2 className="panel-title">
           <WandSparkles size={17} className="text-cyan-300" />
-          Game Concept
+          {t('gameConcept')}
         </h2>
       </div>
 
       <textarea 
         className="field-input thin-scrollbar h-32 resize-none p-3 text-sm leading-6"
-        placeholder="Describe the game, camera, mood, and key mechanics..."
+        placeholder={t('conceptPlaceholder')}
         value={concept}
         onChange={(e) => setConcept(e.target.value)}
       />
@@ -59,7 +61,7 @@ export function ConceptInput() {
             className="rounded-md border border-slate-700 bg-slate-900/80 px-2.5 py-1.5 text-left text-[11px] font-semibold text-slate-300 hover:border-cyan-400/60 hover:text-cyan-100"
             onClick={() => setConcept(starter)}
           >
-            Template {index + 1}
+            {t('template')} {index + 1}
           </button>
         ))}
       </div>
@@ -76,7 +78,7 @@ export function ConceptInput() {
         disabled={loading}
       >
         <WandSparkles size={16} />
-        {loading ? 'Generating resource tree...' : 'Generate Resource Tree'}
+        {loading ? t('generatingResourceTree') : t('generateResourceTree')}
       </button>
     </section>
   );

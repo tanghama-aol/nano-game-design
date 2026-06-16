@@ -2,9 +2,7 @@ import PQueue from 'p-queue';
 import { prisma } from '@nano-game/database';
 import { IResourceNode, ITaskProgress } from '@nano-game/types';
 import { Server } from 'socket.io';
-import { GoogleGenAI } from '@google/genai';
-import { decrypt } from '../utils/crypto';
-import { getProxyFetch } from '../utils/proxy';
+import { generateImage } from './ai-provider';
 
 let assetQueue: PQueue | null = null;
 let ioInstance: Server | null = null;
@@ -24,19 +22,9 @@ async function simulateOrGenerateImage(node: IResourceNode): Promise<{ url: stri
   
   let resultUrl = '';
 
-  if (settings && settings.authMode === 'GEMINI' && settings.geminiApiKey) {
+  if (settings) {
     try {
-      const apiKey = decrypt(settings.geminiApiKey);
-      const ai = new GoogleGenAI({ apiKey, fetch: getProxyFetch() } as any);
-      
-      const response = (await ai.models.generateContent({
-        model: settings.imageModel || 'imagen-3.0-generate-001',
-        contents: node.prompt || node.name
-      })) as any; 
-      
-      if (response && response.candidates && response.candidates[0]) {
-        resultUrl = "data:image/jpeg;base64,placeholder-from-real-api"; 
-      }
+      resultUrl = await generateImage(settings, node);
     } catch (e) {
       console.warn("Real generation failed, falling back to simulation", e);
     }

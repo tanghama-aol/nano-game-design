@@ -7,9 +7,7 @@ exports.initQueue = initQueue;
 exports.addJobToQueue = addJobToQueue;
 const p_queue_1 = __importDefault(require("p-queue"));
 const database_1 = require("@nano-game/database");
-const genai_1 = require("@google/genai");
-const crypto_1 = require("../utils/crypto");
-const proxy_1 = require("../utils/proxy");
+const ai_provider_1 = require("./ai-provider");
 let assetQueue = null;
 let ioInstance = null;
 function initQueue(concurrency, io) {
@@ -25,17 +23,9 @@ async function simulateOrGenerateImage(node) {
     const settings = await database_1.prisma.settings.findFirst();
     const targetSeed = node.seed || settings?.globalSeed || Math.floor(Math.random() * 2147483647);
     let resultUrl = '';
-    if (settings && settings.authMode === 'GEMINI' && settings.geminiApiKey) {
+    if (settings) {
         try {
-            const apiKey = (0, crypto_1.decrypt)(settings.geminiApiKey);
-            const ai = new genai_1.GoogleGenAI({ apiKey, fetch: (0, proxy_1.getProxyFetch)() });
-            const response = (await ai.models.generateContent({
-                model: settings.imageModel || 'imagen-3.0-generate-001',
-                contents: node.prompt || node.name
-            }));
-            if (response && response.candidates && response.candidates[0]) {
-                resultUrl = "data:image/jpeg;base64,placeholder-from-real-api";
-            }
+            resultUrl = await (0, ai_provider_1.generateImage)(settings, node);
         }
         catch (e) {
             console.warn("Real generation failed, falling back to simulation", e);

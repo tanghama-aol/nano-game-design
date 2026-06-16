@@ -1,26 +1,39 @@
 export interface ISettings {
     id: string;
-    authMode: 'GEMINI' | 'VERTEX';
+    authMode: ApiProvider;
+    textProvider: ApiProvider;
+    imageProvider: ApiProvider;
     hasGeminiKey: boolean;
     hasVertexPrivateKey: boolean;
+    hasTextCredential: boolean;
+    hasImageCredential: boolean;
     vertexProjectId?: string;
     vertexClientEmail?: string;
     textModel: string;
     imageModel: string;
+    textBaseUrl?: string;
+    imageBaseUrl?: string;
     maxConcurrency: number;
     globalSeed?: number;
 }
 export interface IUpdateSettings {
-    authMode?: 'GEMINI' | 'VERTEX';
+    authMode?: ApiProvider;
+    textProvider?: ApiProvider;
+    imageProvider?: ApiProvider;
     geminiApiKey?: string;
     vertexProjectId?: string;
     vertexClientEmail?: string;
     vertexPrivateKey?: string;
     textModel?: string;
     imageModel?: string;
+    textBaseUrl?: string;
+    imageBaseUrl?: string;
+    textApiKey?: string;
+    imageApiKey?: string;
     maxConcurrency?: number;
     globalSeed?: number | null;
 }
+export type ApiProvider = 'GEMINI' | 'VERTEX' | 'OPENAI' | 'OPENAI_COMPATIBLE' | 'SIMULATED';
 export type ResourceType = 'Character' | 'Texture' | 'Scene' | 'VFX';
 export type NodeStatus = 'pending' | 'generating' | 'success' | 'failed';
 export interface IResourceNode {
@@ -56,6 +69,24 @@ export interface IGeneratePromptsRequest {
 }
 export interface IGeneratePromptsResponse {
     prompts: Record<string, string>;
+}
+export interface IReskinGameRequest {
+    gameName: string;
+    globalStyle?: string;
+    language?: 'en' | 'zh';
+}
+export interface IReskinElement {
+    category: string;
+    name: string;
+    description: string;
+    generationHint: string;
+}
+export interface IReskinGameResponse {
+    sourceGame: string;
+    description: string;
+    elements: IReskinElement[];
+    tree: IResourceNode[];
+    source: 'ai' | 'fallback';
 }
 export interface IProject {
     id: string;

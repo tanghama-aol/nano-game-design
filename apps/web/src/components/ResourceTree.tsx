@@ -4,8 +4,10 @@ import { ChevronRight, ChevronDown, Plus, Trash2, ListTree } from 'lucide-react'
 import { Tree, MultiBackend, getBackendOptions } from "@minoru/react-dnd-treeview";
 import type { NodeModel } from "@minoru/react-dnd-treeview";
 import { DndProvider } from "react-dnd";
+import { useI18n } from '../i18n';
 
 export function ResourceTree() {
+  const { t } = useI18n();
   const nodes = useTreeStore(state => state.nodes);
   const setNodes = useTreeStore(state => state.setNodes);
   const addNode = useTreeStore(state => state.addNode);
@@ -22,7 +24,7 @@ export function ResourceTree() {
 
   const handleAddNode = (parentId: string | null = null) => {
     addNode(parentId, {
-      name: parentId ? 'New Child Asset' : 'New Asset',
+      name: parentId ? t('newChildAsset') : t('newAsset'),
       type: 'Character',
       prompt: '',
       dimensions: '512x512',
@@ -73,23 +75,23 @@ export function ResourceTree() {
         <div className="panel-header mb-4">
           <h2 className="panel-title">
             <ListTree size={17} className="text-cyan-300" />
-            Resource Tree
+            {t('resourceTree')}
           </h2>
           <button className="secondary-button min-h-0 px-2.5 py-1.5 text-xs" onClick={() => handleAddNode()}>
-            <Plus size={14} /> Root Node
+            <Plus size={14} /> {t('rootNode')}
           </button>
         </div>
         
         {nodes.length === 0 ? (
           <div className="flex min-h-[360px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-700 bg-slate-950/45 px-6 text-center">
             <ListTree size={42} className="mb-4 text-slate-600" />
-            <div className="text-sm font-bold text-slate-200">No resources yet</div>
+            <div className="text-sm font-bold text-slate-200">{t('noResourcesYet')}</div>
             <p className="mt-2 max-w-xs text-sm leading-6 text-slate-500">
-              Generate a tree from a concept or add a root asset manually to start planning.
+              {t('noResourcesHelp')}
             </p>
             <button className="primary-button mt-4" onClick={() => handleAddNode()}>
               <Plus size={16} />
-              Add First Asset
+              {t('addFirstAsset')}
             </button>
           </div>
         ) : (

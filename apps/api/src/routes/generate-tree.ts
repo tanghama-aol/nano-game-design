@@ -1,10 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '@nano-game/database';
 import { IGenerateTreeRequest, IResourceNode } from '@nano-game/types';
-import { decrypt } from '../utils/crypto';
-import { GoogleGenAI } from '@google/genai';
-import { VertexAI } from '@google-cloud/vertexai';
-import { getProxyFetch } from '../utils/proxy';
+import { generateText } from '../services/ai-provider';
 
 export const generateTreeRouter: Router = Router();
 
@@ -46,55 +43,7 @@ generateTreeRouter.post('/', async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    let resultText = '';
-
-    if (settings.authMode === 'GEMINI') {
-      if (!settings.geminiApiKey) {
-        res.status(400).json({ error: 'Gemini API Key missing' });
-        return;
-      }
-      
-      const apiKey = decrypt(settings.geminiApiKey);
-      const ai = new GoogleGenAI({ apiKey, fetch: getProxyFetch() } as any);
-      
-      const response = await ai.models.generateContent({
-        model: settings.textModel || 'gemini-1.5-pro',
-        contents: `${SYSTEM_PROMPT}\n\nConcept: ${concept}`
-      });
-      
-      resultText = response.text || '';
-      
-    } else {
-      if (!settings.vertexProjectId || !settings.vertexClientEmail || !settings.vertexPrivateKey) {
-        res.status(400).json({ error: 'Vertex credentials incomplete' });
-        return;
-      }
-      
-      const privateKey = decrypt(settings.vertexPrivateKey).replace(/\\n/g, '\n');
-      
-      const vertexAI = new VertexAI({
-        project: settings.vertexProjectId,
-        location: 'us-central1',
-        googleAuthOptions: {
-          credentials: {
-            client_email: settings.vertexClientEmail,
-            private_key: privateKey,
-          }
-        }
-      });
-      
-      const generativeModel = vertexAI.getGenerativeModel({
-        model: settings.textModel || 'gemini-1.5-pro'
-      });
-      
-      const response = await generativeModel.generateContent({
-        contents: [
-          { role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\nConcept: ${concept}` }] }
-        ]
-      });
-      
-      resultText = (response.response.candidates?.[0]?.content?.parts?.[0] as any)?.text || '';
-    }
+    let resultText = await generateText(settings, SYSTEM_PROMPT, `Concept: ${concept}`);
 
     resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
 

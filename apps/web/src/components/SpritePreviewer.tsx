@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Pause, Play } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 interface Props {
   imageUrl: string;
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function SpritePreviewer({ imageUrl, frames }: Props) {
+  const { t } = useI18n();
   const [currentFrame, setCurrentFrame] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [fps, setFps] = useState(8);
@@ -28,7 +30,7 @@ export function SpritePreviewer({ imageUrl, frames }: Props) {
 
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-950/55 p-4">
-      <h3 className="mb-3 text-sm font-black text-slate-100">Sprite Animation Preview</h3>
+      <h3 className="mb-3 text-sm font-black text-slate-100">{t('spritePreview')}</h3>
       
       <div 
         className="mx-auto h-36 w-36 rounded-md border border-dashed border-slate-600 bg-slate-900"
@@ -46,7 +48,7 @@ export function SpritePreviewer({ imageUrl, frames }: Props) {
           onClick={() => setPlaying(!playing)}
         >
           {playing ? <Pause size={14} /> : <Play size={14} />}
-          {playing ? 'Pause' : 'Play'}
+          {playing ? t('pause') : t('play')}
         </button>
         
         <div className="flex items-center gap-2">

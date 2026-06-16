@@ -4,10 +4,12 @@ import { useTreeStore } from '../store/treeStore';
 import { STYLE_PRESETS } from '@nano-game/types';
 import type { IResourceNode, IGeneratePromptsRequest, IGeneratePromptsResponse } from '@nano-game/types';
 import { FileText, Sparkles } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 const NEGATIVE_PROMPTS = "blurry, cropped, deformed, watermark, text, signature, worst quality, low quality, normal quality, jpeg artifacts";
 
 export function PromptPanel() {
+  const { t } = useI18n();
   const nodes = useTreeStore(state => state.nodes);
   const globalStyle = useTreeStore(state => state.globalStyle);
   const setGlobalStyle = useTreeStore(state => state.setGlobalStyle);
@@ -17,7 +19,7 @@ export function PromptPanel() {
 
   const handleGeneratePrompts = async () => {
     if (nodes.length === 0) {
-      setMessage('Generate or add resources before creating prompts.');
+      setMessage(t('noResourcesForPrompts'));
       return;
     }
     
@@ -52,9 +54,9 @@ export function PromptPanel() {
       });
       
       batchUpdateNodes(updates);
-      setMessage(`Applied ${Object.keys(updates).length} production prompts to the tree.`);
+      setMessage(`${Object.keys(updates).length} ${t('promptsApplied')}`);
     } catch (error: any) {
-      setMessage(error.response?.data?.error || 'Failed to generate prompts. Check credentials and backend logs.');
+      setMessage(error.response?.data?.error || t('promptGenerationFailed'));
     } finally {
       setLoading(false);
     }
@@ -65,15 +67,15 @@ export function PromptPanel() {
       <div className="panel-header mb-4">
         <h2 className="panel-title">
           <FileText size={17} className="text-amber-300" />
-          Style & Prompts
+          {t('stylePrompts')}
         </h2>
         <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] font-bold text-slate-300">
-          {nodes.length} root nodes
+          {nodes.length} {t('rootNodes')}
         </span>
       </div>
       
       <div className="mb-4">
-        <label className="field-label">Global Style Preset</label>
+        <label className="field-label">{t('globalStylePreset')}</label>
         <select 
           className="field-input p-2 text-sm"
           value={globalStyle}
@@ -90,16 +92,16 @@ export function PromptPanel() {
           </optgroup>
         </select>
         <p className="mt-1 text-[11px] text-slate-500">
-          Individual nodes can override this in the Editor panel.
+          {t('styleOverrideHelp')}
         </p>
       </div>
 
       <div className="mb-4">
-        <label className="field-label">Built-in Negative Prompts</label>
+        <label className="field-label">{t('negativePrompts')}</label>
         <div className="rounded-md border border-red-400/20 bg-red-500/10 p-2 text-xs leading-5 text-red-100">
           {NEGATIVE_PROMPTS}
         </div>
-        <p className="mt-1 text-[11px] text-slate-500">Automatically applied during image generation.</p>
+        <p className="mt-1 text-[11px] text-slate-500">{t('negativePromptHelp')}</p>
       </div>
 
       {message && (
@@ -114,7 +116,7 @@ export function PromptPanel() {
         disabled={loading || nodes.length === 0}
       >
         <Sparkles size={16} />
-        {loading ? 'Generating prompts...' : 'Generate Prompts for Tree'}
+        {loading ? t('generatingPrompts') : t('generatePrompts')}
       </button>
     </section>
   );

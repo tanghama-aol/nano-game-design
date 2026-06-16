@@ -4,10 +4,12 @@ import { useTreeStore } from '../store/treeStore';
 import { io } from 'socket.io-client';
 import type { IResourceNode, ITaskProgress } from '@nano-game/types';
 import { Archive, Download, Play, Save } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 const socket = io('http://localhost:3001');
 
 export function GenerationPanel() {
+  const { t } = useI18n();
   const nodes = useTreeStore(state => state.nodes);
   const setNodes = useTreeStore(state => state.setNodes);
   const updateNode = useTreeStore(state => state.updateNode);
@@ -32,10 +34,10 @@ export function GenerationPanel() {
           setProjectId(res.data.project.id);
           setNodes(res.data.project.treeData);
           setIsGenerating(res.data.project.isGenerating);
-          setMessage('Loaded saved project state.');
+          setMessage(t('projectLoaded'));
         }
       })
-      .catch(() => setMessage('Backend unavailable. Generation and export require the API server.'));
+      .catch(() => setMessage(t('backendUnavailableGeneration')));
   }, []);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function GenerationPanel() {
         resultUrl: data.resultUrl,
         seed: data.seed 
       });
-      setMessage(data.status === 'success' ? 'Asset completed.' : `Asset ${data.status}.`);
+      setMessage(data.status === 'success' ? `${t('assets')} ${t('ready').toLowerCase()}.` : `${t('assets')} ${data.status}.`);
     });
 
     return () => {
@@ -68,18 +70,18 @@ export function GenerationPanel() {
         isGenerating
       });
       setProjectId(res.data.id);
-      setMessage('Project state saved.');
+      setMessage(t('projectSaved'));
       return res.data.id;
     } catch (e) {
       console.error(e);
-      setMessage('Failed to save project state.');
+      setMessage(t('projectSaveFailed'));
       return null;
     }
   };
 
   const handleGenerate = async () => {
     if (nodes.length === 0) {
-      setMessage('No resources to generate.');
+      setMessage(t('noResources'));
       return;
     }
     
@@ -89,17 +91,17 @@ export function GenerationPanel() {
     setIsGenerating(true);
     try {
       const res = await axios.post('http://localhost:3001/api/projects/generate', { projectId: id });
-      setMessage(`Queued ${res.data.queued} assets for generation.`);
+      setMessage(`${res.data.queued} ${t('queuedAssets')}`);
     } catch (e) {
       console.error(e);
-      setMessage('Failed to start generation.');
+      setMessage(t('generationFailed'));
       setIsGenerating(false);
     }
   };
 
   const handleExport = async () => {
     if (!projectId) {
-      setMessage('Save the project before exporting.');
+      setMessage(t('saveBeforeExport'));
       return;
     }
     window.open(`http://localhost:3001/api/projects/export/${projectId}`, '_blank');
@@ -110,10 +112,10 @@ export function GenerationPanel() {
       <div className="panel-header mb-4">
         <h2 className="panel-title">
           <Archive size={17} className="text-emerald-300" />
-          Generation & Export
+          {t('generationExport')}
         </h2>
         <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] font-bold text-slate-300">
-          {readyCount}/{flatNodes.length} ready
+          {readyCount}/{flatNodes.length} {t('ready').toLowerCase()}
         </span>
       </div>
       
@@ -124,14 +126,14 @@ export function GenerationPanel() {
           disabled={nodes.length === 0 || isGenerating || queuedCount === 0}
         >
           <Play size={16} />
-          {isGenerating ? 'Generation Running...' : `Generate Assets (${queuedCount})`}
+          {isGenerating ? t('generationRunning') : `${t('generateAssets')} (${queuedCount})`}
         </button>
         <button 
           className="secondary-button"
           onClick={saveProject}
         >
           <Save size={16} />
-          Save State
+          {t('saveState')}
         </button>
       </div>
       
@@ -142,7 +144,7 @@ export function GenerationPanel() {
           disabled={!projectId || readyCount === 0}
         >
           <Download size={16} />
-          Export ZIP with Metadata
+          {t('exportZip')}
         </button>
       </div>
 
@@ -153,7 +155,7 @@ export function GenerationPanel() {
       )}
 
       <p className="mt-3 text-xs leading-5 text-slate-500">
-        Export includes successful nodes, prompts, seeds, and metadata in the current tree structure.
+        {t('exportHelp')}
       </p>
     </section>
   );

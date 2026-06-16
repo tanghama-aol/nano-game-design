@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { prisma } from '@nano-game/database';
-import { ISettings, IUpdateSettings } from '@nano-game/types';
+import { ApiProvider, ISettings, IUpdateSettings } from '@nano-game/types';
 import { encrypt } from '../utils/crypto';
+import { hasConfiguredCredential } from '../services/ai-provider';
 
 export const settingsRouter: Router = Router();
 
@@ -14,13 +15,19 @@ settingsRouter.get('/', async (_req, res) => {
 
   const response: ISettings = {
     id: settings.id,
-    authMode: settings.authMode as 'GEMINI' | 'VERTEX',
+    authMode: settings.authMode as ApiProvider,
+    textProvider: (settings.textProvider || settings.authMode) as ApiProvider,
+    imageProvider: (settings.imageProvider || settings.authMode) as ApiProvider,
     hasGeminiKey: !!settings.geminiApiKey,
     hasVertexPrivateKey: !!settings.vertexPrivateKey,
+    hasTextCredential: hasConfiguredCredential(settings, 'text'),
+    hasImageCredential: hasConfiguredCredential(settings, 'image'),
     vertexProjectId: settings.vertexProjectId || undefined,
     vertexClientEmail: settings.vertexClientEmail || undefined,
     textModel: settings.textModel,
     imageModel: settings.imageModel,
+    textBaseUrl: settings.textBaseUrl || undefined,
+    imageBaseUrl: settings.imageBaseUrl || undefined,
     maxConcurrency: settings.maxConcurrency,
     globalSeed: settings.globalSeed || undefined,
   };
@@ -38,6 +45,8 @@ settingsRouter.post('/', async (req, res) => {
   
   const updateData: any = {
     authMode: data.authMode || settings.authMode,
+    textProvider: data.textProvider || settings.textProvider || settings.authMode,
+    imageProvider: data.imageProvider || settings.imageProvider || settings.authMode,
     textModel: data.textModel || settings.textModel,
     imageModel: data.imageModel || settings.imageModel,
     maxConcurrency: data.maxConcurrency || settings.maxConcurrency,
@@ -49,6 +58,18 @@ settingsRouter.post('/', async (req, res) => {
 
   if (data.geminiApiKey) {
     updateData.geminiApiKey = encrypt(data.geminiApiKey);
+  }
+  if (data.textBaseUrl !== undefined) {
+    updateData.textBaseUrl = data.textBaseUrl;
+  }
+  if (data.imageBaseUrl !== undefined) {
+    updateData.imageBaseUrl = data.imageBaseUrl;
+  }
+  if (data.textApiKey) {
+    updateData.textApiKey = encrypt(data.textApiKey);
+  }
+  if (data.imageApiKey) {
+    updateData.imageApiKey = encrypt(data.imageApiKey);
   }
   if (data.vertexProjectId !== undefined) {
     updateData.vertexProjectId = data.vertexProjectId;
