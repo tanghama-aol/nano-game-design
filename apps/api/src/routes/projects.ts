@@ -12,6 +12,8 @@ projectsRouter.post('/save', async (req: Request, res: Response): Promise<void> 
   try {
     const { name, treeData, isGenerating } = req.body as ISaveProjectRequest;
     
+    // Current implementation keeps one active local project. It upserts the
+    // first row instead of requiring project selection UI.
     let proj = await prisma.project.findFirst();
     
     if (!proj) {
@@ -73,6 +75,8 @@ projectsRouter.post('/generate', async (req: Request, res: Response): Promise<vo
     const tree: IResourceNode[] = JSON.parse(proj.treeData);
     const nodesToQueue: IResourceNode[] = [];
     
+    // If nodeIds are provided, queue only those nodes. Otherwise resume all
+    // pending/failed nodes so interrupted batches can continue.
     const collectNodes = (nodes: IResourceNode[]) => {
       nodes.forEach(node => {
         if (nodeIds && nodeIds.length > 0) {
@@ -117,6 +121,8 @@ projectsRouter.get('/export/:projectId', async (req: Request, res: Response): Pr
     });
 
     const archive = archiver('zip', { zlib: { level: 9 } });
+    // archiver streams bytes directly to the HTTP response, so large exports do
+    // not need to be buffered fully in memory before download starts.
     archive.pipe(res);
 
     // Recursively parse tree, attach metadata, and stream to ZIP
@@ -137,7 +143,8 @@ projectsRouter.get('/export/:projectId', async (req: Request, res: Response): Pr
             // Process buffer & attach metadata
             const buffer = await attachMetadata(base64Data, node);
             
-            // File extension based on transp
+            // File extension is based on the transparency flag expected by the
+            // generated asset.
             const ext = node.transparent ? 'png' : 'jpg';
             archive.append(buffer, { name: `${folderName}.${ext}` });
             

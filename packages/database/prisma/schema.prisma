@@ -1,12 +1,18 @@
 generator client {
+  // Prisma generates the typed TypeScript client consumed from
+  // packages/database/src/index.ts.
   provider = "prisma-client-js"
 }
 
 datasource db {
+  // SQLite keeps this desktop/local tool easy to run without a separate DB
+  // server. Production multi-user deployments would usually switch providers.
   provider = "sqlite"
   url      = "file:./dev.db"
 }
 
+// Settings is treated like a singleton table by the API: routes read the first
+// row and create it on demand when the database is empty.
 model Settings {
   id                String   @id @default(cuid())
   authMode          String   @default("GEMINI")
@@ -27,6 +33,9 @@ model Settings {
   updatedAt         DateTime @updatedAt
 }
 
+// Project stores the editable resource tree as JSON because the tree shape is
+// nested and changes frequently. The shared IResourceNode type documents that
+// JSON shape on the TypeScript side.
 model Project {
   id          String   @id @default(cuid())
   name        String   @default("Untitled Project")
@@ -36,6 +45,8 @@ model Project {
   updatedAt   DateTime @updatedAt
 }
 
+// GoldenSeed records reusable seeds discovered during generation. The current
+// UI ships with sample seeds, but this model is ready for persisted history.
 model GoldenSeed {
   id          String   @id @default(cuid())
   seed        Int      @unique

@@ -30,6 +30,8 @@ generatePromptsRouter.post('/', async (req: Request, res: Response): Promise<voi
       return;
     }
 
+    // The route sends only prompt-relevant node fields instead of the whole
+    // project. Smaller prompts reduce token cost and make model output steadier.
     const payloadContext = JSON.stringify({ globalStyle, nodes });
     let resultText = await generateText(settings, SYSTEM_PROMPT, `Assets to process:\n${payloadContext}`);
 
@@ -37,6 +39,8 @@ generatePromptsRouter.post('/', async (req: Request, res: Response): Promise<voi
 
     const promptsMap = JSON.parse(resultText) as Record<string, string>;
 
+    // The response is an id -> prompt map so the frontend can patch existing
+    // tree nodes without replacing user edits like selection or local status.
     res.json({ prompts: promptsMap });
     
   } catch (error: any) {

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useCallback } from 'react';
 
 export type Language = 'en' | 'zh';
 
@@ -24,6 +25,19 @@ const dictionaries: Record<Language, Dictionary> = {
     generatingResourceTree: 'Generating resource tree...',
     conceptRequired: 'Enter a game concept before generating the asset tree.',
     generateTreeFailed: 'Failed to generate tree. Check API settings and backend status.',
+    generateDesignPackage: 'Generate Design Package',
+    generatingDesignPackage: 'Generating design package...',
+    generateDesignPackageFailed: 'Failed to generate design package. Check API settings and backend status.',
+    designDocument: 'Design Document',
+    noDesignDocumentYet: 'No design document yet',
+    noDesignDocumentHelp: 'Generate a design package from a concept to review the refined game direction here.',
+    genre: 'Genre',
+    playerFantasy: 'Player Fantasy',
+    coreLoop: 'Core Loop',
+    artDirection: 'Art Direction',
+    keyMechanics: 'Key Mechanics',
+    contentPillars: 'Content Pillars',
+    productionNotes: 'Production Notes',
     oneClickReskin: 'One-click Reskin',
     sourceGameName: 'Source Game Name',
     sourceGamePlaceholder: 'Enter a game name, e.g. Hades, Stardew Valley...',
@@ -140,6 +154,19 @@ const dictionaries: Record<Language, Dictionary> = {
     generatingResourceTree: '正在生成资源树...',
     conceptRequired: '请先输入游戏概念。',
     generateTreeFailed: '生成资源树失败。请检查 API 设置和后端状态。',
+    generateDesignPackage: '生成设计包',
+    generatingDesignPackage: '正在生成设计包...',
+    generateDesignPackageFailed: '生成设计包失败。请检查 API 设置和后端状态。',
+    designDocument: '设计文档',
+    noDesignDocumentYet: '暂无设计文档',
+    noDesignDocumentHelp: '从概念生成设计包后，可在这里查看细化后的游戏方向。',
+    genre: '类型',
+    playerFantasy: '玩家幻想',
+    coreLoop: '核心循环',
+    artDirection: '美术方向',
+    keyMechanics: '关键机制',
+    contentPillars: '内容支柱',
+    productionNotes: '制作备注',
     oneClickReskin: '一键套皮',
     sourceGameName: '参考游戏名',
     sourceGamePlaceholder: '输入游戏名，例如 Hades、Stardew Valley...',
@@ -255,6 +282,9 @@ export const useLocaleStore = create<LocaleState>((set) => ({
 export function useI18n() {
   const language = useLocaleStore((state) => state.language);
   const setLanguage = useLocaleStore((state) => state.setLanguage);
-  const t = (key: string) => dictionaries[language][key] || dictionaries.en[key] || key;
+  const t = useCallback(
+    (key: string) => dictionaries[language][key] || dictionaries.en[key] || key,
+    [language],
+  );
   return { language, setLanguage, t };
 }

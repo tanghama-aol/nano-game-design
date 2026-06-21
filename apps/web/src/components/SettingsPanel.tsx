@@ -20,6 +20,8 @@ export function SettingsPanel() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    // On load, the API returns redacted credential flags plus editable non-secret
+    // fields. Password inputs stay blank so saved secrets are never echoed.
     axios.get('http://localhost:3001/api/settings')
       .then((res) => {
         setSettings(res.data);
@@ -38,12 +40,14 @@ export function SettingsPanel() {
       .catch(() => {
         setMessage(t('backendUnavailableSettings'));
       });
-  }, []);
+  }, [t]);
 
   const handleSave = async () => {
     setSaving(true);
     setMessage('');
     try {
+      // Only values present in formData are sent. The backend decides which
+      // fields should overwrite, preserve, clear, or encrypt.
       await axios.post('http://localhost:3001/api/settings', formData);
       setMessage(t('settingsSaved'));
     } catch {
@@ -70,6 +74,8 @@ export function SettingsPanel() {
   }
 
   const hasCredential = settings.hasTextCredential && settings.hasImageCredential;
+  // Provider-specific booleans keep the JSX readable and make it obvious which
+  // credential forms appear for each SDK/auth style.
   const textProvider = formData.textProvider || 'GEMINI';
   const imageProvider = formData.imageProvider || 'GEMINI';
   const usesGemini = textProvider === 'GEMINI' || imageProvider === 'GEMINI';
@@ -237,6 +243,8 @@ function ProviderSelect({
   value: ApiProvider;
   onChange: (value: ApiProvider) => void;
 }) {
+  // Controlled select: React owns the value, and changes are lifted to the
+  // SettingsPanel form state instead of reading DOM state on submit.
   return (
     <div>
       <label className="field-label">{label}</label>

@@ -4,6 +4,7 @@ import { ResourceTree } from './components/ResourceTree'
 import { PromptPanel } from './components/PromptPanel'
 import { SeedLibrary } from "./components/SeedLibrary";
 import { GenerationPanel } from './components/GenerationPanel'
+import { DesignDocumentPanel } from './components/DesignDocumentPanel'
 import { EditorPanel } from './components/EditorPanel'
 import { ReskinPanel } from './components/ReskinPanel'
 import { useTreeStore } from './store/treeStore'
@@ -12,6 +13,8 @@ import type { ReactNode } from 'react'
 import { Boxes, CheckCircle2, CircleDashed, ImageIcon, Languages, Loader2, Sparkles, TriangleAlert } from 'lucide-react'
 import { useI18n } from './i18n'
 
+// Many panels need total counts, but the editable data is a nested tree. This
+// helper flattens the tree for dashboard metrics without changing store state.
 function flattenNodes(nodes: IResourceNode[]): IResourceNode[] {
   return nodes.flatMap((node) => [node, ...(node.children ? flattenNodes(node.children) : [])])
 }
@@ -21,6 +24,8 @@ function App() {
   const nodes = useTreeStore((state) => state.nodes)
   const globalStyle = useTreeStore((state) => state.globalStyle)
   const flatNodes = flattenNodes(nodes)
+  // Derived state stays inside render because it is cheap and always reflects
+  // the latest tree; no extra Zustand field is needed for these counts.
   const statusCounts = flatNodes.reduce<Record<NodeStatus, number>>(
     (acc, node) => {
       acc[node.status] += 1
@@ -108,6 +113,7 @@ function App() {
           </div>
 
           <div className="flex flex-col gap-5 xl:col-span-5">
+            <DesignDocumentPanel />
             <GenerationPanel />
             <ResourceTree />
           </div>
@@ -132,6 +138,8 @@ function Metric({
   value: number
   tone: 'cyan' | 'slate' | 'blue' | 'green' | 'red'
 }) {
+  // Tailwind class names are kept in a static map so the compiler can see them
+  // and generate CSS. Dynamic string construction can be missed by Tailwind.
   const tones = {
     cyan: 'border-cyan-400/30 bg-cyan-400/10 text-cyan-200',
     slate: 'border-slate-500/30 bg-slate-700/20 text-slate-200',

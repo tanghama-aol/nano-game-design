@@ -43,12 +43,16 @@ generateTreeRouter.post('/', async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    // The LLM is asked for JSON, but many models still wrap answers in markdown.
+    // Strip common fences before parsing, then normalize fields the UI requires.
     let resultText = await generateText(settings, SYSTEM_PROMPT, `Concept: ${concept}`);
 
     resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
 
     const treeData = JSON.parse(resultText) as IResourceNode[];
     
+    // Defensive pass: generated trees must have IDs and a predictable initial
+    // status so React can render, select, and queue nodes reliably.
     const traverseAndFix = (nodes: any[]) => {
       nodes.forEach(node => {
         if (!node.id) node.id = generateId();

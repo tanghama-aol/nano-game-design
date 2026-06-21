@@ -22,6 +22,8 @@ export function SeedLibrary() {
   const batchUpdateNodes = useTreeStore(state => state.batchUpdateNodes);
 
   useEffect(() => {
+    // Seed history is currently mocked for UI exploration; global seed itself is
+    // loaded from real backend settings.
     setSeeds([
       { id: '1', seed: 1048576, name: 'Protagonist Template', description: 'Good proportions for characters' },
       { id: '2', seed: 42424242, name: 'Cyberpunk Red', description: 'Strong neon contrast' }
@@ -33,7 +35,7 @@ export function SeedLibrary() {
       .catch(() => {
         setMessage(t('backendUnavailableSeed'));
       });
-  }, []);
+  }, [t]);
 
   const flatten = (list: IResourceNode[]): IResourceNode[] => {
     return list.flatMap(node => [node, ...(node.children ? flatten(node.children) : [])]);
@@ -60,6 +62,8 @@ export function SeedLibrary() {
       return;
     }
 
+    // Apply seeds only to nodes that can still be regenerated. Successful nodes
+    // keep their recorded seed/result pair intact.
     const updates: Record<string, Partial<IResourceNode>> = {};
     flatten(nodes).forEach(node => {
       if (node.status === 'pending' || node.status === 'failed') {

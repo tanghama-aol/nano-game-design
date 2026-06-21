@@ -8,6 +8,8 @@ let assetQueue: PQueue | null = null;
 let ioInstance: Server | null = null;
 
 export function initQueue(concurrency: number, io: Server) {
+  // p-queue limits how many image-generation jobs run at once. This protects AI
+  // provider rate limits and keeps the local server responsive during batches.
   if (!assetQueue) {
     assetQueue = new PQueue({ concurrency });
     ioInstance = io;
@@ -18,6 +20,8 @@ export function initQueue(concurrency: number, io: Server) {
 
 async function simulateOrGenerateImage(node: IResourceNode): Promise<{ url: string; seed: number }> {
   const settings = await prisma.settings.findFirst();
+  // Seed priority: node override, global setting, then a random fallback. The
+  // returned seed is saved so a successful render can be reproduced later.
   const targetSeed = node.seed || settings?.globalSeed || Math.floor(Math.random() * 2147483647);
   
   let resultUrl = '';
@@ -49,6 +53,8 @@ async function simulateOrGenerateImage(node: IResourceNode): Promise<{ url: stri
 export async function addJobToQueue(projectId: string, node: IResourceNode) {
   if (!assetQueue || !ioInstance) throw new Error("Queue not initialized");
 
+  // Queue jobs are fire-and-forget from the HTTP route. Progress is reported by
+  // Socket.IO and persisted back into the project tree when each job completes.
   assetQueue.add(async () => {
     try {
       const startStatus: ITaskProgress = { nodeId: node.id, status: 'generating' };
@@ -75,6 +81,9 @@ async function updateNodeInDb(projectId: string, nodeId: string, patch: Partial<
   
   const tree: IResourceNode[] = JSON.parse(proj.treeData);
   
+  // The tree is stored as nested JSON, so updates walk recursively until the
+  // target node is found. The function mutates only the matched node in memory,
+  // then writes the full serialized tree back to SQLite.
   const updateRec = (nodes: IResourceNode[] | undefined): boolean => {
     if (!nodes) return false;
     for (let i = 0; i < nodes.length; i++) {

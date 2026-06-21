@@ -56,6 +56,25 @@ export interface IGenerateTreeRequest {
 export interface IGenerateTreeResponse {
     tree: IResourceNode[];
 }
+export interface IGameDesignDocument {
+    title: string;
+    genre: string;
+    playerFantasy: string;
+    coreLoop: string[];
+    artDirection: string;
+    keyMechanics: string[];
+    contentPillars: string[];
+    productionNotes: string[];
+}
+export interface IGenerateDesignPackageRequest {
+    concept: string;
+    globalStyle?: string;
+    language?: 'en' | 'zh';
+}
+export interface IGenerateDesignPackageResponse {
+    designDocument: IGameDesignDocument;
+    tree: IResourceNode[];
+}
 export interface IGeneratePromptsRequest {
     nodes: {
         id: string;

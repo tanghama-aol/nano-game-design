@@ -35,6 +35,8 @@ export function ResourceTree() {
   };
 
   const getFlatData = (list: IResourceNode[], parentId: string | number = 0): NodeModel<IResourceNode>[] => {
+    // @minoru/react-dnd-treeview works with flat rows and parent IDs. The app's
+    // domain model is nested, so we convert before rendering.
     let result: NodeModel<IResourceNode>[] = [];
     list.forEach(node => {
       result.push({
@@ -52,6 +54,8 @@ export function ResourceTree() {
   };
 
   const getNestedData = (flatData: NodeModel<IResourceNode>[], parentId: string | number = 0): IResourceNode[] => {
+    // After a drag/drop, convert the library's flat tree back into the nested
+    // IResourceNode[] shape used by the store, API, and exporter.
     const children = flatData.filter(node => node.parent === parentId);
     return children.map(node => {
       const nestedChildren = getNestedData(flatData, node.id);
@@ -71,6 +75,7 @@ export function ResourceTree() {
 
   return (
     <DndProvider backend={MultiBackend} options={getBackendOptions()}>
+      {/* DndProvider supplies HTML5/touch drag-and-drop backends for the Tree. */}
       <section className="panel min-h-[520px] p-4">
         <div className="panel-header mb-4">
           <h2 className="panel-title">

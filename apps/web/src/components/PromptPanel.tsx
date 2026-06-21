@@ -26,6 +26,8 @@ export function PromptPanel() {
     setLoading(true);
     setMessage('');
     
+    // Prompt generation is a batch operation, so nested nodes are flattened into
+    // a compact API payload and later patched back by node id.
     const flatNodes: IGeneratePromptsRequest['nodes'] = [];
     const traverse = (nList: IResourceNode[]) => {
       nList.forEach(node => {
@@ -49,14 +51,19 @@ export function PromptPanel() {
       const promptsMap = res.data.prompts;
       const updates: Record<string, Partial<IResourceNode>> = {};
       
+      // Build one update map and let the Zustand store perform one recursive
+      // batch patch. This avoids unnecessary re-renders on large trees.
       Object.entries(promptsMap).forEach(([id, prompt]) => {
         updates[id] = { prompt };
       });
       
       batchUpdateNodes(updates);
       setMessage(`${Object.keys(updates).length} ${t('promptsApplied')}`);
-    } catch (error: any) {
-      setMessage(error.response?.data?.error || t('promptGenerationFailed'));
+    } catch (error: unknown) {
+      const apiError = axios.isAxiosError<{ error?: string }>(error)
+        ? error.response?.data?.error
+        : undefined;
+      setMessage(apiError || t('promptGenerationFailed'));
     } finally {
       setLoading(false);
     }

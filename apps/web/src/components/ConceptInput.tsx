@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useTreeStore } from '../store/treeStore';
 import { WandSparkles } from 'lucide-react';
 import { useI18n } from '../i18n';
+import type { IGenerateDesignPackageRequest, IGenerateDesignPackageResponse } from '@nano-game/types';
 
 const CONCEPT_STARTERS = [
   'A cozy tactical farming RPG with mushroom villages, modular tools, and seasonal monsters.',
@@ -11,11 +12,13 @@ const CONCEPT_STARTERS = [
 ];
 
 export function ConceptInput() {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const [concept, setConcept] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const setNodes = useTreeStore(state => state.setNodes);
+  const setDesignDocument = useTreeStore(state => state.setDesignDocument);
+  const globalStyle = useTreeStore(state => state.globalStyle);
 
   const handleGenerate = async () => {
     if (!concept.trim()) {
@@ -26,12 +29,21 @@ export function ConceptInput() {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:3001/api/generate-tree', { concept });
+      // The design-package endpoint returns both the readable design document
+      // and the initial resource tree, so one action can seed the whole editor.
+      const payload: IGenerateDesignPackageRequest = { concept, globalStyle, language };
+      const res = await axios.post<IGenerateDesignPackageResponse>('http://localhost:3001/api/generate-design-package', payload);
       if (res.data.tree) {
         setNodes(res.data.tree);
       }
-    } catch (error: any) {
-      setError(error.response?.data?.error || t('generateTreeFailed'));
+      if (res.data.designDocument) {
+        setDesignDocument(res.data.designDocument);
+      }
+    } catch (error: unknown) {
+      const apiError = axios.isAxiosError<{ error?: string }>(error)
+        ? error.response?.data?.error
+        : undefined;
+      setError(apiError || t('generateDesignPackageFailed'));
     } finally {
       setLoading(false);
     }
@@ -78,7 +90,7 @@ export function ConceptInput() {
         disabled={loading}
       >
         <WandSparkles size={16} />
-        {loading ? t('generatingResourceTree') : t('generateResourceTree')}
+        {loading ? t('generatingDesignPackage') : t('generateDesignPackage')}
       </button>
     </section>
   );

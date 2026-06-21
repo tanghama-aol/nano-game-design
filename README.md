@@ -33,6 +33,8 @@ corepack pnpm dev
 
 The frontend runs at `http://localhost:5173` and the API runs at `http://localhost:3001`.
 
+For a beginner-friendly development walkthrough, see [`DEVELOPMENT.md`](./DEVELOPMENT.md).
+
 ## Environment
 
 The API can generate a temporary encryption key at startup, but persisted credentials should use a stable key:

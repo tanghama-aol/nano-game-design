@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* Tailwind v4 reads this file as the CSS entrypoint. The @layer sections below
+   group raw CSS into Tailwind's base/component/utility cascade order. */
 @layer base {
   :root {
     color-scheme: dark;
@@ -39,6 +41,8 @@
 }
 
 @layer components {
+  /* Shared component classes keep repeated panel/form/button styling in one
+     place while JSX stays focused on layout and behavior. */
   .panel {
     border: 1px solid rgba(51, 65, 85, 0.9);
     border-radius: 0.5rem;
@@ -159,6 +163,7 @@
 }
 
 @layer utilities {
+  /* Small app-specific utilities that are not worth turning into components. */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }

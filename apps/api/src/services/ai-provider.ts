@@ -9,6 +9,9 @@ import { getProxyFetch } from '../utils/proxy';
 
 type ProviderKind = 'text' | 'image';
 
+// This service deliberately accepts a small subset of the Prisma Settings shape.
+// That keeps SDK-specific code independent from the database model and easier
+// to unit test with plain objects.
 interface ProviderSettings {
   authMode?: string | null;
   textProvider?: string | null;
@@ -40,6 +43,8 @@ const DEFAULTS = {
   openAiImageModel: 'image2',
 };
 
+// Used by the settings UI to show whether a provider can run before a request
+// is made. Some credentials may live in env vars or .codex/config.toml, not DB.
 export function hasConfiguredCredential(settings: ProviderSettings | null, kind: ProviderKind): boolean {
   const resolved = resolveProvider(settings, kind);
   if (resolved.provider === 'SIMULATED') return true;
@@ -63,6 +68,8 @@ export async function generateText(settings: ProviderSettings | null, systemProm
   if (resolved.provider === 'GEMINI') {
     const apiKey = getGeminiKey(settings);
     if (!apiKey) throw new Error('Gemini API Key missing');
+    // @google/genai uses a simple API-key client. Passing fetch lets us later
+    // plug in a proxy-aware fetch implementation without changing call sites.
     const ai = new GoogleGenAI({ apiKey, fetch: getProxyFetch() } as any);
     const response = await ai.models.generateContent({
       model: resolved.model || DEFAULTS.textModel,
@@ -77,6 +84,8 @@ export async function generateText(settings: ProviderSettings | null, systemProm
     }
 
     const privateKey = decrypt(settings.vertexPrivateKey).replace(/\\n/g, '\n');
+    // Vertex AI uses service-account credentials and a Google Cloud project
+    // instead of a user-facing API key. The SDK signs requests internally.
     const vertexAI = new VertexAI({
       project: settings.vertexProjectId,
       location: 'us-central1',
@@ -108,6 +117,8 @@ export async function generateImage(settings: ProviderSettings | null, node: IRe
   if (resolved.provider === 'GEMINI') {
     const apiKey = getGeminiKey(settings);
     if (!apiKey) throw new Error('Gemini API Key missing');
+    // The current Gemini image path is wired through the same SDK surface. The
+    // placeholder return below marks where real binary extraction belongs.
     const ai = new GoogleGenAI({ apiKey, fetch: getProxyFetch() } as any);
     const response = (await ai.models.generateContent({
       model: resolved.model || DEFAULTS.imageModel,
@@ -122,6 +133,9 @@ export async function generateImage(settings: ProviderSettings | null, node: IRe
 }
 
 export function resolveProvider(settings: ProviderSettings | null, kind: ProviderKind): ResolvedProvider {
+  // Resolution order intentionally favors explicit UI settings, then env vars,
+  // then Codex config, then safe defaults. That lets beginners start locally
+  // while advanced users route through private OpenAI-compatible gateways.
   const provider = normalizeProvider(
     kind === 'text'
       ? settings?.textProvider || process.env.TEXT_PROVIDER || process.env.AI_TEXT_PROVIDER || settings?.authMode
@@ -180,6 +194,8 @@ function normalizeProvider(value?: string | null): ApiProvider {
 
 async function postOpenAiCompatibleText(resolved: ResolvedProvider, systemPrompt: string, userPrompt: string): Promise<string> {
   if (!resolved.apiKey) throw new Error('OpenAI-compatible API key or token missing');
+  // OpenAI-compatible vendors generally expose /chat/completions with Bearer
+  // auth. Keeping this request hand-written avoids coupling to one SDK version.
   const response = await fetch(`${trimSlash(resolved.baseUrl || DEFAULTS.openAiBaseUrl)}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -206,6 +222,8 @@ async function postOpenAiCompatibleText(resolved: ResolvedProvider, systemPrompt
 
 async function postOpenAiCompatibleImage(resolved: ResolvedProvider, node: IResourceNode): Promise<string> {
   if (!resolved.apiKey) throw new Error('OpenAI-compatible image API key or token missing');
+  // Image providers commonly return either base64 JSON or a hosted URL. The
+  // caller stores a data URL/URL uniformly on IResourceNode.resultUrl.
   const response = await fetch(`${trimSlash(resolved.baseUrl || DEFAULTS.openAiBaseUrl)}/images/generations`, {
     method: 'POST',
     headers: {
@@ -238,6 +256,8 @@ function getGeminiKey(settings: ProviderSettings | null): string | undefined {
 function decryptOptional(value?: string | null): string | undefined {
   if (!value) return undefined;
   try {
+    // Stored credentials are encrypted, but env/config values are usually plain
+    // text. Falling back to the original value supports both sources.
     return decrypt(value);
   } catch {
     return value;
@@ -256,6 +276,8 @@ function normalizeImageSize(dimensions?: string): string {
 
 function findCodexValue(providerName: string, keyNames: string[]): string | undefined {
   const config = readCodexConfig();
+  // Support several common section names so local Codex/OpenAI config files can
+  // be reused without forcing one exact TOML layout.
   const sections = [
     `api.${providerName}`,
     `providers.${providerName}`,
@@ -292,6 +314,8 @@ function readCodexConfig(): Record<string, Record<string, string>> {
 }
 
 function parseSimpleToml(content: string): Record<string, Record<string, string>> {
+  // This tiny parser only supports the simple [section] key = "value" shape the
+  // app needs for credentials. Use a real TOML parser if nested data is needed.
   const result: Record<string, Record<string, string>> = {};
   let current = '';
 

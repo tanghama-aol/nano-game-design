@@ -14,18 +14,24 @@ export function SpritePreviewer({ imageUrl, frames }: Props) {
   const [fps, setFps] = useState(8);
 
   useEffect(() => {
-    let interval: any;
+    // The preview assumes frames are laid out horizontally in one sprite sheet.
+    // setInterval advances the background-position at the chosen FPS.
+    let interval: ReturnType<typeof window.setInterval> | undefined;
     if (playing && frames > 1) {
-      interval = setInterval(() => {
+      interval = window.setInterval(() => {
         setCurrentFrame((prev) => (prev + 1) % frames);
       }, 1000 / fps);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval !== undefined) {
+        window.clearInterval(interval);
+      }
+    };
   }, [playing, frames, fps]);
 
   if (frames <= 1) return null;
 
-  // Assuming horizontal uniform sprite sheet for simplicity
+  // Convert a frame index into a CSS background-position percentage.
   const bgPositionX = `${(currentFrame / (frames - 1)) * 100 || 0}%`;
 
   return (

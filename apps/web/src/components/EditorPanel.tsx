@@ -21,6 +21,8 @@ export function EditorPanel() {
   const [mode, setMode] = useState<'EASY' | 'MANUAL'>('EASY');
   const [copied, setCopied] = useState(false);
 
+  // Selection stores only the node id. The current node is resolved from the
+  // latest tree so edits always apply to fresh state after drag/drop updates.
   const findNode = (id: string, nList: IResourceNode[]): IResourceNode | null => {
     for (const n of nList) {
       if (n.id === id) return n;
@@ -47,10 +49,14 @@ export function EditorPanel() {
   }
 
   const handleChange = (field: keyof IResourceNode, value: IResourceNode[keyof IResourceNode]) => {
+    // Use a single field updater for the form. The store handles the recursive
+    // patch and preserves all other node properties.
     updateNode(selectedNode.id, { [field]: value });
   };
 
   const handleCopyPrompt = async () => {
+    // navigator.clipboard is the browser Clipboard API; it requires a secure
+    // context in production, but localhost is allowed during development.
     await navigator.clipboard.writeText(selectedNode.prompt || '');
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1200);

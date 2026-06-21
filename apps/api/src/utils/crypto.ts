@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-gcm';
+// AES-GCM provides encryption plus an auth tag, so decrypt can detect tampered
+// credential data. In real deployments ENCRYPTION_KEY must be stable.
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
 const IV_LENGTH = 16;
 
@@ -25,6 +27,8 @@ export function decrypt(text: string): string {
   if (!text) return text;
   
   try {
+    // Format: iv:authTag:ciphertext. Returning the original text for other
+    // shapes keeps old/plain credentials readable during migration.
     const parts = text.split(':');
     if (parts.length !== 3) return text;
     

@@ -5,6 +5,8 @@ import { generateText } from '../services/ai-provider';
 
 export const reskinGameRouter: Router = Router();
 
+// Reskin intentionally asks for abstract "design DNA" instead of copied names
+// or assets. This keeps the workflow useful while avoiding direct IP reuse.
 const SYSTEM_PROMPT = `You are a senior game art director.
 Given only a game name, infer broad visual and gameplay-facing asset categories without copying protected characters, logos, exact names, story, maps, or signature IP.
 Extract reusable design DNA as abstract descriptors, then generate a production-ready resource tree.
@@ -55,6 +57,8 @@ Create 8-14 practical game image assets, grouped by characters, scenes, textures
     let resultText = await generateText(settings, SYSTEM_PROMPT, userPrompt);
     resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(resultText) as Omit<IReskinGameResponse, 'sourceGame' | 'source'>;
+    // Normalize the tree from both AI and fallback paths so the frontend sees
+    // the same IResourceNode shape regardless of provider availability.
     const tree = normalizeTree(parsed.tree || fallbackTree(gameName, globalStyle));
 
     res.json({
@@ -77,6 +81,8 @@ Create 8-14 practical game image assets, grouped by characters, scenes, textures
 });
 
 function normalizeTree(nodes: IResourceNode[]): IResourceNode[] {
+  // A resilient fallback path matters here because this feature is often used
+  // before credentials are fully configured.
   return nodes.map((node) => ({
     id: node.id || generateId(),
     name: node.name || 'Untitled Asset',

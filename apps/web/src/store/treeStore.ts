@@ -1,11 +1,13 @@
 import { create } from 'zustand';
-import type { IResourceNode } from '@nano-game/types';
+import type { IGameDesignDocument, IResourceNode } from '@nano-game/types';
 import { v4 as uuidv4 } from 'uuid';
 
 interface TreeState {
   nodes: IResourceNode[];
+  designDocument: IGameDesignDocument | null;
   globalStyle: string;
   selectedNodeId: string | null;
+  setDesignDocument: (document: IGameDesignDocument | null) => void;
   setGlobalStyle: (style: string) => void;
   setSelectedNodeId: (id: string | null) => void;
   setNodes: (nodes: IResourceNode[]) => void;
@@ -15,15 +17,22 @@ interface TreeState {
   deleteNode: (id: string) => void;
 }
 
+// Zustand gives the app a tiny global store without reducers or context
+// providers. Components subscribe to only the slices they read, which keeps
+// tree edits and progress updates straightforward.
 export const useTreeStore = create<TreeState>((set) => ({
   nodes: [],
+  designDocument: null,
   globalStyle: 'Pixel Art (16-bit)',
   selectedNodeId: null,
+  setDesignDocument: (document) => set({ designDocument: document }),
   setGlobalStyle: (style) => set({ globalStyle: style }),
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
   setNodes: (nodes) => set({ nodes }),
   
   updateNode: (id, data) => set((state) => {
+    // Keep updates immutable: React can only re-render reliably when each
+    // changed branch returns a new object/array reference.
     const updateRecursive = (nodes: IResourceNode[]): IResourceNode[] => {
       return nodes.map(node => {
         if (node.id === id) return { ...node, ...data };
@@ -35,6 +44,8 @@ export const useTreeStore = create<TreeState>((set) => ({
   }),
 
   batchUpdateNodes: (updates) => set((state) => {
+    // Batch updates are used after prompt generation and seed application to
+    // avoid calling set() once per node.
     const updateRecursive = (nodes: IResourceNode[]): IResourceNode[] => {
       return nodes.map(node => {
         let updatedNode = node;
@@ -57,6 +68,8 @@ export const useTreeStore = create<TreeState>((set) => ({
       status: 'pending',
     };
 
+    // A null parent means "add a root node"; otherwise recurse until the parent
+    // is found and append to its children.
     if (!parentId) return { nodes: [...state.nodes, newNode] };
 
     const addRecursive = (nodes: IResourceNode[]): IResourceNode[] => {
@@ -70,6 +83,8 @@ export const useTreeStore = create<TreeState>((set) => ({
   }),
 
   deleteNode: (id) => set((state) => {
+    // Delete is also recursive because child nodes can be nested arbitrarily
+    // deep by the drag-and-drop tree.
     const deleteRecursive = (nodes: IResourceNode[]): IResourceNode[] => {
       return nodes.filter(node => node.id !== id).map(node => {
         if (node.children) return { ...node, children: deleteRecursive(node.children) };

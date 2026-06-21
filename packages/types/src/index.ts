@@ -1,3 +1,6 @@
+// Shared contracts are imported by both apps/web and apps/api. Keeping request,
+// response, and domain shapes here prevents the frontend and backend from
+// silently drifting apart as the workflow grows.
 export interface ISettings {
   id: string;
   authMode: ApiProvider;
@@ -39,6 +42,8 @@ export type ApiProvider = 'GEMINI' | 'VERTEX' | 'OPENAI' | 'OPENAI_COMPATIBLE' |
 export type ResourceType = 'Character' | 'Texture' | 'Scene' | 'VFX';
 export type NodeStatus = 'pending' | 'generating' | 'success' | 'failed';
 
+// A resource node is the core domain object. The same tree is edited in React,
+// persisted as JSON in SQLite, sent to image providers, and exported as files.
 export interface IResourceNode {
   id: string;
   name: string;
@@ -59,6 +64,30 @@ export interface IGenerateTreeRequest {
 }
 
 export interface IGenerateTreeResponse {
+  tree: IResourceNode[];
+}
+
+export interface IGameDesignDocument {
+  title: string;
+  genre: string;
+  playerFantasy: string;
+  coreLoop: string[];
+  artDirection: string;
+  keyMechanics: string[];
+  contentPillars: string[];
+  productionNotes: string[];
+}
+
+// The design-package endpoint returns both planning text and an asset tree, so
+// the first concept-generation step can populate the whole workbench at once.
+export interface IGenerateDesignPackageRequest {
+  concept: string;
+  globalStyle?: string;
+  language?: 'en' | 'zh';
+}
+
+export interface IGenerateDesignPackageResponse {
+  designDocument: IGameDesignDocument;
   tree: IResourceNode[];
 }
 
@@ -129,6 +158,8 @@ export interface IGoldenSeed {
   createdAt: string;
 }
 
+// UI-facing presets are deliberately defined with the shared types so panels
+// can reuse the same vocabulary when generating prompts or editing a node.
 export const STYLE_PRESETS = {
   PIXEL: ["8-bit Retro", "16-bit SNES", "Isometric Pixel Art", "Modern Indie Pixel"],
   CARTOON: ["Anime / Manga", "American Comic", "Watercolor Illustration", "Cel-shaded 3D"],

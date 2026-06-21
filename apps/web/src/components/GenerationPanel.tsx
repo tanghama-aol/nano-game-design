@@ -6,6 +6,8 @@ import type { IResourceNode, ITaskProgress } from '@nano-game/types';
 import { Archive, Download, Play, Save } from 'lucide-react';
 import { useI18n } from '../i18n';
 
+// The socket is module-scoped so all renders of this component share one
+// client connection. Event listeners are still registered/removed in effects.
 const socket = io('http://localhost:3001');
 
 export function GenerationPanel() {
@@ -18,6 +20,8 @@ export function GenerationPanel() {
   const [message, setMessage] = useState('');
 
   const flatNodes = useMemo(() => {
+    // useMemo avoids re-flattening during unrelated state changes such as
+    // message text updates.
     const flatten = (list: IResourceNode[]): IResourceNode[] => {
       return list.flatMap(node => [node, ...(node.children ? flatten(node.children) : [])]);
     };
@@ -26,8 +30,12 @@ export function GenerationPanel() {
 
   const readyCount = flatNodes.filter(node => node.status === 'success').length;
   const queuedCount = flatNodes.filter(node => node.status === 'pending' || node.status === 'failed').length;
+  const hasGenerationFinished = flatNodes.length > 0 && flatNodes.every(node => node.status === 'success' || node.status === 'failed');
+  const generationRunning = isGenerating && !hasGenerationFinished;
 
   useEffect(() => {
+    // Load the last saved local project on mount. The API currently stores one
+    // active project, so there is no project picker in the frontend.
     axios.get('http://localhost:3001/api/projects/load')
       .then(res => {
         if (res.data.project) {
@@ -38,11 +46,13 @@ export function GenerationPanel() {
         }
       })
       .catch(() => setMessage(t('backendUnavailableGeneration')));
-  }, []);
+  }, [setNodes, t]);
 
   useEffect(() => {
     if (!projectId) return;
 
+    // The backend emits progress on a project-specific channel. This keeps
+    // multiple browser tabs/projects from consuming unrelated job events.
     socket.on(`task:progress:${projectId}`, (data: ITaskProgress) => {
       updateNode(data.nodeId, { 
         status: data.status, 
@@ -55,19 +65,15 @@ export function GenerationPanel() {
     return () => {
       socket.off(`task:progress:${projectId}`);
     };
-  }, [projectId]);
-
-  useEffect(() => {
-    if (isGenerating && flatNodes.length > 0 && flatNodes.every(node => node.status === 'success' || node.status === 'failed')) {
-      setIsGenerating(false);
-    }
-  }, [flatNodes, isGenerating]);
+  }, [projectId, t, updateNode]);
 
   const saveProject = async () => {
     try {
+      // Save before generation so queued jobs can update the same persisted
+      // tree while the browser receives live Socket.IO progress.
       const res = await axios.post('http://localhost:3001/api/projects/save', {
         treeData: nodes,
-        isGenerating
+        isGenerating: generationRunning
       });
       setProjectId(res.data.id);
       setMessage(t('projectSaved'));
@@ -104,6 +110,7 @@ export function GenerationPanel() {
       setMessage(t('saveBeforeExport'));
       return;
     }
+    // Export is a normal browser download because the API streams a ZIP file.
     window.open(`http://localhost:3001/api/projects/export/${projectId}`, '_blank');
   };
 
@@ -123,10 +130,10 @@ export function GenerationPanel() {
         <button 
           className="primary-button"
           onClick={handleGenerate}
-          disabled={nodes.length === 0 || isGenerating || queuedCount === 0}
+          disabled={nodes.length === 0 || generationRunning || queuedCount === 0}
         >
           <Play size={16} />
-          {isGenerating ? t('generationRunning') : `${t('generateAssets')} (${queuedCount})`}
+          {generationRunning ? t('generationRunning') : `${t('generateAssets')} (${queuedCount})`}
         </button>
         <button 
           className="secondary-button"

@@ -7,6 +7,8 @@ import { hasConfiguredCredential } from '../services/ai-provider';
 export const settingsRouter: Router = Router();
 
 settingsRouter.get('/', async (_req, res) => {
+  // The app expects one settings row. Creating it lazily keeps first-run setup
+  // simple: opening the settings panel is enough to initialize defaults.
   let settings = await prisma.settings.findFirst();
   
   if (!settings) {
@@ -20,6 +22,7 @@ settingsRouter.get('/', async (_req, res) => {
     imageProvider: (settings.imageProvider || settings.authMode) as ApiProvider,
     hasGeminiKey: !!settings.geminiApiKey,
     hasVertexPrivateKey: !!settings.vertexPrivateKey,
+    // The UI receives only booleans for secrets, never raw stored credentials.
     hasTextCredential: hasConfiguredCredential(settings, 'text'),
     hasImageCredential: hasConfiguredCredential(settings, 'image'),
     vertexProjectId: settings.vertexProjectId || undefined,
@@ -52,6 +55,8 @@ settingsRouter.post('/', async (req, res) => {
     maxConcurrency: data.maxConcurrency || settings.maxConcurrency,
   };
 
+  // Undefined means "do not change"; null/empty values are handled only where a
+  // field explicitly supports clearing. Secrets are encrypted before storage.
   if (data.globalSeed !== undefined) {
     updateData.globalSeed = data.globalSeed;
   }
